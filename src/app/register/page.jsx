@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react'
 import Navbar from '../components/Navbar'
-import { type } from './../../../.next/types/routes.d';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 
 function RegisterPage() {
 
@@ -12,6 +13,10 @@ function RegisterPage() {
     const [password, setPassword] = useState("");
     const [confrimPassword, setConfrimPassword] = useState("");
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    const { data: session } = useSession();
+    if (session) redirect("/welcome");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,6 +32,22 @@ function RegisterPage() {
         }
 
         try {
+
+            const resCheckUser = await fetch("http://localhost:3000/api/checkUser", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email })
+            })
+
+            const { user } = await resCheckUser.json();
+
+            if (user) {
+                setError("User already exists!");
+                return;
+            }
+            
             const res = await fetch("http://localhost:3000/api/register", {
                 method: "POST",
                 header: {
@@ -38,6 +59,7 @@ function RegisterPage() {
             if (res.ok) {
                 const form = e.target;
                 setError("");
+                setSuccess("User registration successfully!");
                 form.reset();
             } else {
                 console.log("User registration failed.");
@@ -62,11 +84,17 @@ function RegisterPage() {
                             {error}
                         </div>
                     )}
+
+                    {success && (
+                        <div className='bg-green-500 text-sm text-while py-1 px-3 rounded-md mt-2'>
+                            {success}
+                        </div>
+                    )}
                     
-                    <input onChange={(e) => setName(e.target.value)} className='block bg-gray-300 p-2 my-2 rounded-md' type="text" placeholder='Enter your name' />
-                    <input onChange={(e) => setEmail(e.target.value)} className='block bg-gray-300 p-2 my-2 rounded-md' type="email" placeholder='Enter your email' />
-                    <input onChange={(e) => setPassword(e.target.value)} className='block bg-gray-300 p-2 my-2 rounded-md' type="password" placeholder='Enter your password' />
-                    <input onChange={(e) => setConfrimPassword(e.target.value)} className='block bg-gray-300 p-2 my-2 rounded-md' type="password" placeholder='Comfirm your password' />
+                    <input onChange={(e) => setName(e.target.value)} className='block bg-gray-500 p-2 my-2 rounded-md' type="text" placeholder='Enter your name' />
+                    <input onChange={(e) => setEmail(e.target.value)} className='block bg-gray-500 p-2 my-2 rounded-md' type="email" placeholder='Enter your email' />
+                    <input onChange={(e) => setPassword(e.target.value)} className='block bg-gray-500 p-2 my-2 rounded-md' type="password" placeholder='Enter your password' />
+                    <input onChange={(e) => setConfrimPassword(e.target.value)} className='block bg-gray-500 p-2 my-2 rounded-md' type="password" placeholder='Comfirm your password' />
                     <button type='submit' className='bg-green-500 p-2 rounded-md text-while'>Sign up</button>
                 </form>
                 <hr className='my-3' />
